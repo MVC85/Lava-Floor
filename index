@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌋 Chão é Lava!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Fredoka One', cursive;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    background: #1a0a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ===== SCREEN LAYERS ===== */
+  #app {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== BACKGROUND ===== */
+  #bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 80%, #1a0a2e 0%, #0d0520 100%);
+    transition: background 2s ease;
+  }
+
+  /* ===== STARS ===== */
+  .stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--d) infinite;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  /* floor/objects removed – kids use real objects! */
+
+  /* ===== COUNTDOWN ===== */
+  #countdown {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 1s;
+  }
+  #countdown-number {
+    font-size: clamp(8rem, 25vw, 20rem);
+    color: #fff;
+    text-shadow: 0 0 40px #ff6b35, 0 0 80px #ff6b35;
+    line-height: 1;
+    animation: countPulse 1s ease-in-out;
+  }
+  @keyframes countPulse {
+    0% { transform: scale(1.5); opacity: 0; }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  #countdown-label {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.2rem, 4vw, 2.5rem);
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    margin-top: 1rem;
+  }
+
+  /* ===== HURRICANE ===== */
+  #hurricane-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: 50;
+  }
+  #hurricane-layer.active { opacity: 1; }
+
+  .wind-line {
+    position: absolute;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(200,230,255,0.8), transparent);
+    border-radius: 2px;
+    animation: windMove var(--dur, 0.4s) linear infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  @keyframes windMove {
+    0% { transform: translateX(-110vw) rotate(var(--angle, -5deg)); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(110vw) rotate(var(--angle, -5deg)); opacity: 0; }
+  }
+
+  /* Debris */
+  .debris {
+    position: absolute;
+    font-size: clamp(1rem, 3vw, 2.5rem);
+    animation: debrisMove var(--dur, 2s) linear infinite;
+    animation-delay: var(--delay, 0s);
+    opacity: 0.9;
+  }
+  @keyframes debrisMove {
+    0% { transform: translateX(-120vw) translateY(0) rotate(0deg); opacity: 0; }
+    5% { opacity: 1; }
+    50% { transform: translateX(0vw) translateY(var(--vy, -50px)) rotate(180deg); opacity: 1; }
+    95% { opacity: 1; }
+    100% { transform: translateX(120vw) translateY(calc(var(--vy, -50px)*2)) rotate(360deg); opacity: 0; }
+  }
+
+  /* ===== WARNING MESSAGE ===== */
+  #warning-msg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    text-align: center;
+    padding: 2rem;
+  }
+  #warning-msg.show {
+    animation: warningAppear 0.5s forwards;
+  }
+  @keyframes warningAppear {
+    0% { opacity: 0; transform: scale(0.5); }
+    70% { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  #warning-text {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.8rem, 6vw, 5rem);
+    color: #fff;
+    text-shadow: 0 0 20px #ff4500, 0 0 40px #ff4500, 0 4px 0 #8b0000;
+    line-height: 1.2;
+    animation: shake 0.3s infinite;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0) rotate(-1deg); }
+    25% { transform: translateX(-6px) rotate(1deg); }
+    75% { transform: translateX(6px) rotate(-1deg); }
+  }
+  .warning-icon {
+    font-size: clamp(3rem, 10vw, 8rem);
+    animation: iconPulse 0.5s ease-in-out infinite;
+    margin-bottom: 1rem;
+  }
+  @keyframes iconPulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  /* ===== VOLCANO ===== */
+  #volcano-layer {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: clamp(200px, 50vw, 500px);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #volcano-layer.show { opacity: 1; }
+
+  .volcano-svg {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Eruption particles */
+  #eruption-particles {
+    position: absolute;
+    bottom: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 160;
+  }
+  .particle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: eruptParticle var(--dur, 1s) ease-out forwards;
+    animation-delay: var(--delay, 0s);
+    opacity: 0;
+  }
+  @keyframes eruptParticle {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx, 0), var(--ty, -200px)) scale(0.2); opacity: 0; }
+  }
+
+  /* ===== LAVA ===== */
+  #lava-layer {
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 100%;
+    height: 0;
+    z-index: 180;
+    overflow: hidden;
+    transition: none;
+  }
+  #lava-surface {
+    position: absolute;
+    top: -30px;
+    left: -5%;
+    width: 110%;
+    height: 60px;
+    background: #ff4500;
+    border-radius: 50%;
+    animation: lavaSurface 2s ease-in-out infinite;
+  }
+  @keyframes lavaSurface {
+    0%,100% { transform: scaleY(1) translateX(0); }
+    33% { transform: scaleY(1.15) translateX(2%); }
+    66% { transform: scaleY(0.9) translateX(-2%); }
+  }
+  #lava-body {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #ff4500 0%, #cc2200 30%, #880000 70%, #550000 100%);
+  }
+
+  /* Lava bubbles */
+  .lava-bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #ff8c00, #cc2200);
+    animation: lavaBubble var(--dur, 2s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    opacity: 0.8;
+  }
+  @keyframes lavaBubble {
+    0% { transform: scale(0) translateY(0); opacity: 0; }
+    40% { opacity: 0.9; }
+    80% { transform: scale(1) translateY(-20px); opacity: 0.7; }
+    100% { transform: scale(1.2) translateY(-30px); opacity: 0; }
+  }
+
+  /* Lava glow */
+  #lava-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 170;
+    opacity: 0;
+    transition: opacity 1s;
+    background: radial-gradient(ellipse at 50% 100%, rgba(255,69,0,0.4) 0%, transparent 70%);
+  }
+  #lava-glow.active { opacity: 1; }
+
+  /* Lava screen overlay */
+  #lava-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 190;
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(180, 20, 0, 0.0);
+    transition: opacity 1s;
+  }
+
+  /* ===== FREEZE / ICE ===== */
+  #ice-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s;
+  }
+  #ice-layer.active { opacity: 1; }
+
+  .ice-crack {
+    position: absolute;
+    background: linear-gradient(var(--angle, 0deg), transparent 40%, rgba(150,220,255,0.6) 50%, transparent 60%);
+    animation: iceCrackAppear 0.5s forwards;
+    animation-delay: var(--delay, 0s);
+    opacity: 0;
+  }
+  @keyframes iceCrackAppear {
+    0% { opacity: 0; transform: scaleX(0); }
+    100% { opacity: 1; transform: scaleX(1); }
+  }
+
+  #ice-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(100,200,255,0.0) 0%, rgba(180,230,255,0.0) 100%);
+    transition: background 4s ease;
+  }
+  #ice-overlay.freezing {
+    background: linear-gradient(135deg, rgba(100,200,255,0.35) 0%, rgba(200,240,255,0.5) 100%);
+  }
+
+  /* Snowflakes */
+  .snowflake {
+    position: absolute;
+    color: rgba(200,240,255,0.9);
+    font-size: var(--size, 1.5rem);
+    animation: snowFall var(--dur, 4s) linear infinite;
+    animation-delay: var(--delay, 0s);
+    top: -50px;
+    opacity: 0;
+  }
+  @keyframes snowFall {
+    0% { transform: translateY(-50px) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 0.8; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* ===== TIMER BAR ===== */
+  #timer-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 8px;
+    background: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700);
+    box-shadow: 0 0 10px #ff4500;
+    z-index: 300;
+    width: 100%;
+    transform-origin: left;
+    transition: none;
+  }
+
+  /* ===== PHASE LABEL ===== */
+  #phase-label {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 300;
+    font-size: clamp(0.8rem, 2.5vw, 1.3rem);
+    color: rgba(255,255,255,0.7);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ===== FROZEN TIMER ===== */
+  #timer-bar.frozen {
+    background: linear-gradient(90deg, #00bfff, #87ceeb, #e0f4ff);
+    box-shadow: 0 0 10px #00bfff;
+  }
+
+  /* ===== HIDDEN ===== */
+  .hidden { display: none !important; }
+
+  /* ===== START SCREEN ===== */
+  #start-screen {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, #2d0a0a, #0d0520);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    text-align: center;
+    padding: 2rem;
+  }
+  #start-screen h1 {
+    font-size: clamp(2.5rem, 10vw, 7rem);
+    color: #ff4500;
+    text-shadow: 0 0 30px #ff4500, 0 0 60px #ff8c00, 0 4px 0 #8b0000;
+    margin-bottom: 0.5rem;
+    animation: titlePulse 2s ease-in-out infinite;
+  }
+  @keyframes titlePulse {
+    0%,100% { transform: scale(1); text-shadow: 0 0 30px #ff4500, 0 0 60px #ff8c00, 0 4px 0 #8b0000; }
+    50% { transform: scale(1.03); text-shadow: 0 0 50px #ff6600, 0 0 100px #ff8c00, 0 4px 0 #8b0000; }
+  }
+  #start-screen .subtitle {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1rem, 3vw, 2rem);
+    color: #ffd700;
+    margin-bottom: 3rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  #start-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    background: linear-gradient(135deg, #ff4500, #ff8c00);
+    color: white;
+    border: none;
+    padding: 1rem 3rem;
+    border-radius: 100px;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(255,69,0,0.5), 0 4px 0 #8b0000;
+    transition: all 0.15s;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #start-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(255,69,0,0.7), 0 4px 0 #8b0000;
+  }
+  #start-btn:active { transform: translateY(1px); box-shadow: 0 4px 20px rgba(255,69,0,0.5), 0 2px 0 #8b0000; }
+
+  #options-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    background: transparent;
+    color: rgba(255,200,100,0.8);
+    border: 2px solid rgba(255,200,100,0.4);
+    padding: 0.6rem 2rem;
+    border-radius: 100px;
+    cursor: pointer;
+    margin-top: 1.2rem;
+    letter-spacing: 2px;
+    transition: all 0.15s;
+  }
+  #options-btn:hover {
+    background: rgba(255,200,100,0.1);
+    border-color: rgba(255,200,100,0.8);
+    color: #ffd700;
+  }
+
+  /* ===== OPTIONS MODAL ===== */
+  #options-modal {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+  }
+  #options-modal.open { display: flex; }
+
+  #options-box {
+    background: linear-gradient(160deg, #1e0a00, #2a0d2e);
+    border: 2px solid rgba(255,120,30,0.4);
+    border-radius: 24px;
+    padding: 2rem 2.5rem;
+    width: min(90vw, 480px);
+    box-shadow: 0 0 60px rgba(255,69,0,0.3);
+  }
+  #options-box h2 {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    color: #ff8c00;
+    text-shadow: 0 0 20px #ff4500;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .opt-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.1rem;
+    gap: 1rem;
+  }
+  .opt-row label {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+    color: #ffd97d;
+    flex: 1;
+    line-height: 1.3;
+  }
+  .opt-row label span {
+    display: block;
+    font-size: 0.75em;
+    color: rgba(255,200,100,0.5);
+    font-weight: 400;
+  }
+  .opt-row input[type=number] {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    width: 90px;
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,120,30,0.4);
+    border-radius: 12px;
+    color: #fff;
+    text-align: center;
+    padding: 0.4rem 0.5rem;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+  .opt-row input[type=number]::-webkit-inner-spin-button,
+  .opt-row input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .opt-row input[type=number]:focus { border-color: #ff8c00; }
+
+  .opt-unit {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255,200,100,0.5);
+    width: 30px;
+  }
+
+  .opt-divider {
+    border: none;
+    border-top: 1px solid rgba(255,120,30,0.2);
+    margin: 1.2rem 0;
+  }
+
+  #options-save {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    background: linear-gradient(135deg, #ff4500, #ff8c00);
+    color: white;
+    border: none;
+    padding: 0.7rem 2.5rem;
+    border-radius: 100px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 0.5rem;
+    box-shadow: 0 6px 20px rgba(255,69,0,0.4), 0 3px 0 #8b0000;
+    transition: all 0.15s;
+    letter-spacing: 2px;
+  }
+  #options-save:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,69,0,0.6), 0 3px 0 #8b0000; }
+  #options-save:active { transform: translateY(1px); }
+
+  .opt-file-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.1rem;
+  }
+  .opt-file-row label {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+    color: #ffd97d;
+    line-height: 1.3;
+  }
+  .opt-file-row label span {
+    display: block;
+    font-size: 0.75em;
+    color: rgba(255,200,100,0.5);
+    font-weight: 400;
+  }
+  .file-pick-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .file-pick-btn {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,120,30,0.4);
+    border-radius: 10px;
+    color: #ffd97d;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .file-pick-btn:hover { border-color: #ff8c00; background: rgba(255,120,30,0.15); }
+  .file-name {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,200,100,0.55);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .file-name.loaded { color: #7dffb0; }
+
+  .emoji-row {
+    font-size: clamp(2rem, 6vw, 4rem);
+    margin-bottom: 1.5rem;
+    animation: emojiFloat 3s ease-in-out infinite;
+  }
+  @keyframes emojiFloat {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  /* Screen flash */
+  #flash {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- BG -->
+  <div id="bg"></div>
+
+  <!-- Start screen -->
+  <div id="start-screen">
+    <div class="emoji-row">🌋🔥💥</div>
+    <h1>Chão é Lava!</h1>
+    <p class="subtitle">Nina e Luke estão prontos?</p>
+    <button id="start-btn" onclick="startGame()">JOGAR! 🎮</button>
+    <button id="options-btn" onclick="openOptions()">⚙️ Opções</button>
+  </div>
+
+  <!-- Options modal -->
+  <div id="options-modal">
+    <div id="options-box">
+      <h2>⚙️ Configurar Tempos</h2>
+
+      <div class="opt-row">
+        <label>⏱️ Contagem inicial<span>antes do furacão</span></label>
+        <input type="number" id="opt-contagem" min="3" max="60" value="10">
+        <span class="opt-unit">seg</span>
+      </div>
+
+      <div class="opt-row">
+        <label>🌀 Furacão<span>duração do vento</span></label>
+        <input type="number" id="opt-furacao" min="5" max="120" value="30">
+        <span class="opt-unit">seg</span>
+      </div>
+
+      <div class="opt-row">
+        <label>⚠️ Aviso do vulcão<span>aparece no segundo...</span></label>
+        <input type="number" id="opt-aviso" min="3" max="119" value="20">
+        <span class="opt-unit">seg</span>
+      </div>
+
+      <hr class="opt-divider">
+
+      <div class="opt-row">
+        <label>🔥 Lava na tela<span>tempo com lava</span></label>
+        <input type="number" id="opt-lava" min="1" max="30" value="5">
+        <span class="opt-unit">min</span>
+      </div>
+
+      <div class="opt-row">
+        <label>❄️ Congelando<span>tempo de gelo</span></label>
+        <input type="number" id="opt-gelo" min="1" max="30" value="5">
+        <span class="opt-unit">min</span>
+      </div>
+
+      <hr class="opt-divider">
+
+      <div class="opt-file-row">
+        <label>💥 Som da explosão<span>toca uma vez quando o vulcão explode</span></label>
+        <div class="file-pick-row">
+          <button class="file-pick-btn" onclick="document.getElementById('file-explosao').click()">📂 Escolher arquivo</button>
+          <span class="file-name" id="nome-explosao">nenhum arquivo</span>
+        </div>
+        <input type="file" id="file-explosao" accept="audio/*" style="display:none" onchange="carregarAudio(this,'explosao')">
+      </div>
+
+      <div class="opt-file-row">
+        <label>🔥 Som da lava<span>toca em loop enquanto a lava está na tela</span></label>
+        <div class="file-pick-row">
+          <button class="file-pick-btn" onclick="document.getElementById('file-lava').click()">📂 Escolher arquivo</button>
+          <span class="file-name" id="nome-lava">nenhum arquivo</span>
+        </div>
+        <input type="file" id="file-lava" accept="audio/*" style="display:none" onchange="carregarAudio(this,'lava')">
+      </div>
+
+      <button id="options-save" onclick="saveOptions()">✅ Salvar</button>
+    </div>
+  </div>
+
+  <!-- Stars -->
+  <div class="stars" id="stars"></div>
+
+  <!-- Hurricane layer -->
+  <div id="hurricane-layer"></div>
+
+  <!-- Warning message -->
+  <div id="warning-msg">
+    <div class="warning-icon">⚠️🌋⚠️</div>
+    <div id="warning-text">Nina e Luke,<br>cuidado o vulcão<br>vai explodir!</div>
+  </div>
+
+  <!-- Volcano -->
+  <div id="volcano-layer">
+    <svg class="volcano-svg" viewBox="0 0 400 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Base -->
+      <path d="M20 250 L150 80 L200 80 L250 80 L380 250 Z" fill="#4a2800"/>
+      <path d="M40 250 L160 90 L200 90 L240 90 L360 250 Z" fill="#3d2000"/>
+      <!-- Crater -->
+      <path d="M150 80 Q175 60 200 80 Q225 60 250 80 L240 90 Q215 75 200 90 Q185 75 160 90 Z" fill="#2a1000"/>
+      <!-- Snow cap -->
+      <path d="M160 85 Q185 65 200 82 Q215 65 240 85 Q225 78 200 88 Q175 78 160 85 Z" fill="#cc3300" opacity="0.8"/>
+      <!-- Lava glow in crater -->
+      <ellipse cx="200" cy="82" rx="40" ry="12" fill="#ff6600" opacity="0.9"/>
+      <ellipse cx="200" cy="82" rx="28" ry="8" fill="#ff9900" opacity="0.9"/>
+      <ellipse cx="200" cy="82" rx="16" ry="5" fill="#ffcc00" opacity="1"/>
+      <!-- Side details -->
+      <path d="M100 200 Q120 180 140 200 Q130 190 100 200 Z" fill="#5a3200" opacity="0.7"/>
+      <path d="M260 180 Q280 160 300 190 Q285 175 260 180 Z" fill="#5a3200" opacity="0.7"/>
+    </svg>
+  </div>
+
+  <!-- Eruption particles -->
+  <div id="eruption-particles"></div>
+
+  <!-- Lava glow -->
+  <div id="lava-glow"></div>
+
+  <!-- Lava rising -->
+  <div id="lava-layer">
+    <div id="lava-surface"></div>
+    <div id="lava-body"></div>
+  </div>
+
+  <!-- Lava overlay -->
+  <div id="lava-overlay"></div>
+
+  <!-- Ice layer -->
+  <div id="ice-layer">
+    <div id="ice-overlay"></div>
+  </div>
+
+  <!-- Timer bar -->
+  <div id="timer-bar"></div>
+
+  <!-- Phase label -->
+  <div id="phase-label" id="phase-label"></div>
+
+  <!-- Flash effect -->
+  <div id="flash"></div>
+
+  <!-- Countdown -->
+  <div id="countdown" class="hidden">
+    <div id="countdown-number">10</div>
+    <div id="countdown-label">Preparar!</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  ⏱️  CONFIGURAÇÃO DE TEMPOS  ← AJUSTE AQUI!
+// ============================================================
+const TEMPO = {
+  CONTAGEM:  5,        // segundos antes do furacão começar
+  FURACAO:   30,        // segundos de furacão
+  AVISO_EM:  20,        // segundo do furacão em que aparece o aviso do vulcão
+  LAVA:      3 * 60,    // segundos com lava na tela  (5 min = 5 * 60)
+  GELO:      1 * 30,    // segundos congelando        (5 min = 5 * 60)
+};
+
+function openOptions() {
+  document.getElementById('opt-contagem').value = TEMPO.CONTAGEM;
+  document.getElementById('opt-furacao').value  = TEMPO.FURACAO;
+  document.getElementById('opt-aviso').value    = TEMPO.AVISO_EM;
+  document.getElementById('opt-lava').value     = TEMPO.LAVA / 60;
+  document.getElementById('opt-gelo').value     = TEMPO.GELO / 60;
+  document.getElementById('options-modal').classList.add('open');
+}
+
+function saveOptions() {
+  const contagem = Math.max(3,  parseInt(document.getElementById('opt-contagem').value) || 10);
+  const furacao  = Math.max(5,  parseInt(document.getElementById('opt-furacao').value)  || 30);
+  let   aviso    = Math.max(3,  parseInt(document.getElementById('opt-aviso').value)    || 20);
+  const lava     = Math.max(1,  parseInt(document.getElementById('opt-lava').value)     || 5);
+  const gelo     = Math.max(1,  parseInt(document.getElementById('opt-gelo').value)     || 5);
+
+  // Aviso não pode ser maior que a duração do furacão - 3s
+  aviso = Math.min(aviso, furacao - 3);
+
+  TEMPO.CONTAGEM = contagem;
+  TEMPO.FURACAO  = furacao;
+  TEMPO.AVISO_EM = aviso;
+  TEMPO.LAVA     = lava * 60;
+  TEMPO.GELO     = gelo * 60;
+
+  document.getElementById('options-modal').classList.remove('open');
+}
+// ============================================================
+//  VOZES (arquivos locais)
+// ============================================================
+const VOZES = {
+  se_preparem:      'se_preparem.mp3',
+  ventania_espalhem:'ventania_espalhem.mp3',
+  chao_lava:        'chao_lava.mp3',
+  lava_esfriando:   'lava_esfriando.mp3',
+};
+
+let vozAtual = null;
+
+function playVoz(nome) {
+  if (vozAtual) { vozAtual.pause(); vozAtual = null; }
+  const src = VOZES[nome];
+  if (!src) return;
+  const audio = new Audio(src);
+  audio.volume = 1;
+  audio.play().catch(() => {});
+  vozAtual = audio;
+}
+
+// ============================================================
+//  ÁUDIOS LOCAIS
+// ============================================================
+const audioLocal = { explosao: null, lava: null, freezing: null };
+let lavaAudioEl = null;
+let freezingAudioEl = null;
+
+// Tenta carregar automaticamente os arquivos da mesma pasta
+function tentarCarregarAutomatico() {
+  const arquivos = [
+    { tipo: 'explosao', nome: 'explosion.mp3' },
+    { tipo: 'lava',     nome: 'lava_loop.mp3' },
+    { tipo: 'freezing', nome: 'freezing_loop.mp3' },
+  ];
+  arquivos.forEach(({ tipo, nome }) => {
+    const audio = new Audio(nome);
+    audio.addEventListener('canplaythrough', () => {
+      audioLocal[tipo] = nome;
+      const nomeEl = document.getElementById('nome-' + tipo);
+      if (nomeEl) { nomeEl.textContent = '✅ ' + nome; nomeEl.classList.add('loaded'); }
+    }, { once: true });
+    audio.load();
+  });
+}
+
+function carregarAudio(input, tipo) {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  audioLocal[tipo] = url;
+  const nomeEl = document.getElementById('nome-' + tipo);
+  nomeEl.textContent = '✅ ' + file.name;
+  nomeEl.classList.add('loaded');
+}
+
+function playExplosaoLocal() {
+  if (audioLocal.explosao) {
+    const el = new Audio(audioLocal.explosao);
+    el.volume = 1;
+    el.play().catch(() => {});
+    return true;
+  }
+  return false;
+}
+
+function startLavaAudioLocal() {
+  stopLavaAudioLocal();
+  if (!audioLocal.lava) return false;
+  lavaAudioEl = new Audio(audioLocal.lava);
+  lavaAudioEl.loop = true;
+  lavaAudioEl.volume = 0;
+  lavaAudioEl.play().catch(() => {});
+  // Fade in
+  let v = 0;
+  const fade = setInterval(() => {
+    v = Math.min(v + 0.05, 1);
+    if (lavaAudioEl) lavaAudioEl.volume = v;
+    if (v >= 1) clearInterval(fade);
+  }, 100);
+  return true;
+}
+
+function stopLavaAudioLocal(fadeTime = 2000) {
+  if (!lavaAudioEl) return;
+  const el = lavaAudioEl;
+  lavaAudioEl = null;
+  let v = el.volume;
+  const step = v / (fadeTime / 100);
+  const fade = setInterval(() => {
+    v = Math.max(0, v - step);
+    el.volume = v;
+    if (v <= 0) { clearInterval(fade); el.pause(); }
+  }, 100);
+}
+
+function startFreezingAudio() {
+  stopFreezingAudio();
+  if (!audioLocal.freezing) return;
+  freezingAudioEl = new Audio(audioLocal.freezing);
+  freezingAudioEl.loop = true;
+  freezingAudioEl.volume = 0;
+  freezingAudioEl.play().catch(() => {});
+  let v = 0;
+  const fade = setInterval(() => {
+    v = Math.min(v + 0.05, 1);
+    if (freezingAudioEl) freezingAudioEl.volume = v;
+    if (v >= 1) clearInterval(fade);
+  }, 100);
+}
+
+function stopFreezingAudio(fadeTime = 2000) {
+  if (!freezingAudioEl) return;
+  const el = freezingAudioEl;
+  freezingAudioEl = null;
+  let v = el.volume;
+  const step = v / (fadeTime / 100);
+  const fade = setInterval(() => {
+    v = Math.max(0, v - step);
+    el.volume = v;
+    if (v <= 0) { clearInterval(fade); el.pause(); }
+  }, 100);
+}
+
+// ============================================================
+//  AUDIO ENGINE (Web Audio API - no external files needed)
+// ============================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let ctx;
+
+function getCtx() {
+  if (!ctx) ctx = new AudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+
+// White noise wind
+let windNodes = null;
+function startWind(volume = 0.4) {
+  stopWind();
+  const ac = getCtx();
+  const bufferSize = ac.sampleRate * 3;
+  const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+  const source = ac.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
+
+  // Bandpass for wind texture
+  const bp1 = ac.createBiquadFilter();
+  bp1.type = 'bandpass';
+  bp1.frequency.value = 600;
+  bp1.Q.value = 0.5;
+
+  const bp2 = ac.createBiquadFilter();
+  bp2.type = 'bandpass';
+  bp2.frequency.value = 1200;
+  bp2.Q.value = 0.3;
+
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0, ac.currentTime);
+  gain.gain.linearRampToValueAtTime(volume, ac.currentTime + 1.5);
+
+  // Tremolo (wind gusting)
+  const lfo = ac.createOscillator();
+  lfo.frequency.value = 0.4;
+  const lfoGain = ac.createGain();
+  lfoGain.gain.value = 0.2;
+  lfo.connect(lfoGain);
+  lfoGain.connect(gain.gain);
+  lfo.start();
+
+  source.connect(bp1);
+  bp1.connect(bp2);
+  bp2.connect(gain);
+  gain.connect(ac.destination);
+  source.start();
+
+  windNodes = { source, gain, lfo };
+}
+
+function stopWind(fadeTime = 1.5) {
+  if (!windNodes) return;
+  const { gain, source, lfo } = windNodes;
+  gain.gain.linearRampToValueAtTime(0, getCtx().currentTime + fadeTime);
+  setTimeout(() => { try { source.stop(); lfo.stop(); } catch(e){} }, fadeTime * 1000 + 100);
+  windNodes = null;
+}
+
+// Explosion sound
+function playExplosion() {
+  // Use local file if loaded, otherwise generate
+  if (playExplosaoLocal()) return;
+
+  const ac = getCtx();
+  const bufSize = ac.sampleRate * 2;
+  const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ac.sampleRate * 0.3));
+
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 300;
+
+  const g = ac.createGain();
+  g.gain.setValueAtTime(3.5, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 2);
+
+  // Rumble oscillator
+  const osc = ac.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(80, ac.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(20, ac.currentTime + 1.5);
+  const og = ac.createGain();
+  og.gain.setValueAtTime(1.5, ac.currentTime);
+  og.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 1.5);
+
+  src.connect(lp); lp.connect(g); g.connect(ac.destination);
+  osc.connect(og); og.connect(ac.destination);
+  src.start(); osc.start(); osc.stop(ac.currentTime + 2);
+}
+
+// Lava bubbling
+let bubbleInterval = null;
+function startLavaBubble() {
+  // Start local audio loop if available (runs alongside or instead of bubbles)
+  const hasLocal = startLavaAudioLocal();
+
+  // Always keep the synthetic bubbles as texture (less frequent if local audio playing)
+  const bubbleMs = () => (hasLocal ? 1400 : 600) + Math.random() * 800;
+  bubbleInterval = setInterval(() => {
+    const ac = getCtx();
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    const baseFreq = 60 + Math.random() * 80;
+    osc.frequency.setValueAtTime(baseFreq, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 2.5, ac.currentTime + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, ac.currentTime + 0.25);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(hasLocal ? 0.1 : 0.25, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(); osc.stop(ac.currentTime + 0.35);
+  }, bubbleMs());
+}
+function stopLavaBubble() {
+  clearInterval(bubbleInterval);
+  bubbleInterval = null;
+  stopLavaAudioLocal();
+}
+
+// Freeze/cracking ice sound
+function playFreeze() {
+  const ac = getCtx();
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const src = ac.createBufferSource();
+      const bufSize = ac.sampleRate * 0.3;
+      const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let j = 0; j < bufSize; j++) d[j] = (Math.random()*2-1) * Math.exp(-j/(ac.sampleRate*0.05));
+      src.buffer = buf;
+      const hp = ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=2000;
+      const g = ac.createGain(); g.gain.value = 0.6;
+      src.connect(hp); hp.connect(g); g.connect(ac.destination);
+      src.start();
+    }, i * 400 + Math.random() * 300);
+  }
+}
+
+// ============================================================
+//  DOM HELPERS
+// ============================================================
+function $(id) { return document.getElementById(id); }
+
+function setPhase(txt) { $('phase-label').textContent = txt; }
+
+// ============================================================
+//  SCENE SETUP
+// ============================================================
+function buildStars() {
+  const container = $('stars');
+  container.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `
+      left:${Math.random()*100}%;top:${Math.random()*60}%;
+      width:${1+Math.random()*3}px;height:${1+Math.random()*3}px;
+      --d:${2+Math.random()*4}s;
+      animation-delay:${Math.random()*4}s;
+    `;
+    container.appendChild(s);
+  }
+}
+
+function buildFloor() {
+  const floor = $('floor');
+  floor.innerHTML = '';
+  for (let i = 0; i < 24; i++) {
+    const t = document.createElement('div');
+    t.className = 'tile';
+    floor.appendChild(t);
+  }
+}
+
+const OBJECTS = ['🛋️','📦','🪑','🎒','🧸','🎮','📚','🛼','🥾','🎨','🧩','🪆','🎸','🧺'];
+const objectsData = [];
+
+function buildObjects() {
+  const container = $('objects');
+  container.innerHTML = '';
+  objectsData.length = 0;
+  const count = 10;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'obj';
+    const xPos = 5 + (i / count) * 88 + (Math.random() * 5 - 2.5);
+    const rot = (Math.random() * 20 - 10);
+    el.style.cssText = `
+      left:${xPos}%;
+      --d:${2.5+Math.random()*2}s;
+      --delay:${Math.random()*2}s;
+      --r:${rot}deg;
+    `;
+    el.textContent = OBJECTS[i % OBJECTS.length];
+    container.appendChild(el);
+    objectsData.push({ el, xPos });
+  }
+}
+
+// ============================================================
+//  HURRICANE VISUALS
+// ============================================================
+function buildHurricane() {
+  const layer = $('hurricane-layer');
+  layer.innerHTML = '';
+  // Wind lines
+  for (let i = 0; i < 35; i++) {
+    const w = document.createElement('div');
+    w.className = 'wind-line';
+    const angle = (Math.random() * 20 - 10);
+    w.style.cssText = `
+      top:${Math.random()*100}%;
+      width:${150+Math.random()*300}px;
+      --dur:${0.25+Math.random()*0.5}s;
+      --delay:${Math.random()*0.5}s;
+      --angle:${angle}deg;
+      opacity:${0.4+Math.random()*0.6};
+    `;
+    layer.appendChild(w);
+  }
+  // Debris
+  const debrisEmoji = ['🍃','🌿','🍂','💨','📄','🎈','🧢','🌀'];
+  for (let i = 0; i < 18; i++) {
+    const d = document.createElement('div');
+    d.className = 'debris';
+    d.style.cssText = `
+      top:${5+Math.random()*80}%;
+      --dur:${1.5+Math.random()*2}s;
+      --delay:${Math.random()*2}s;
+      --vy:${-50-Math.random()*150}px;
+    `;
+    d.textContent = debrisEmoji[Math.floor(Math.random()*debrisEmoji.length)];
+    layer.appendChild(d);
+  }
+}
+
+// ============================================================
+//  ERUPTION PARTICLES
+// ============================================================
+function spawnEruptionParticles() {
+  const container = $('eruption-particles');
+  container.innerHTML = '';
+  const colors = ['#ff4500','#ff8c00','#ffd700','#ff6600','#ff0000','#ffaa00'];
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = Math.PI * (0.2 + Math.random() * 0.6) + Math.PI;
+    const dist = 100 + Math.random() * 300;
+    p.style.cssText = `
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${6+Math.random()*14}px;
+      height:${6+Math.random()*14}px;
+      --tx:${Math.cos(angle)*dist}px;
+      --ty:${Math.sin(angle)*dist - dist*0.5}px;
+      --dur:${0.6+Math.random()*1.2}s;
+      --delay:${Math.random()*0.5}s;
+    `;
+    container.appendChild(p);
+  }
+}
+
+// ============================================================
+//  LAVA RISING
+// ============================================================
+function raiseLava(targetPct, durationMs) {
+  const lavaLayer = $('lava-layer');
+  lavaLayer.style.transition = `height ${durationMs}ms linear`;
+  lavaLayer.style.height = targetPct + '%';
+
+  // Add bubbles
+  const body = $('lava-body');
+  body.innerHTML = '';
+  for (let i = 0; i < 20; i++) {
+    const b = document.createElement('div');
+    b.className = 'lava-bubble';
+    const size = 10 + Math.random() * 40;
+    b.style.cssText = `
+      left:${Math.random()*95}%;
+      bottom:${Math.random()*60}%;
+      width:${size}px;height:${size}px;
+      --dur:${1+Math.random()*2}s;
+      --delay:${Math.random()*3}s;
+    `;
+    body.appendChild(b);
+  }
+}
+
+// ============================================================
+//  ICE / FREEZE
+// ============================================================
+function buildIceCracks() {
+  const layer = $('ice-layer');
+  // Remove old cracks
+  layer.querySelectorAll('.ice-crack').forEach(e => e.remove());
+  for (let i = 0; i < 25; i++) {
+    const c = document.createElement('div');
+    c.className = 'ice-crack';
+    const len = 80 + Math.random() * 200;
+    const angle = Math.random() * 180;
+    c.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      width:${len}px;height:${2+Math.random()*4}px;
+      --angle:${angle}deg;
+      --delay:${i*0.15}s;
+      transform-origin: left center;
+    `;
+    layer.appendChild(c);
+  }
+}
+
+function addSnowflakes() {
+  const layer = $('ice-layer');
+  layer.querySelectorAll('.snowflake').forEach(e=>e.remove());
+  const flakes = ['❄','❅','❆','*','·'];
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('div');
+    s.className = 'snowflake';
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      --size:${0.8+Math.random()*2}rem;
+      --dur:${3+Math.random()*5}s;
+      --delay:${Math.random()*4}s;
+    `;
+    s.textContent = flakes[Math.floor(Math.random()*flakes.length)];
+    layer.appendChild(s);
+  }
+}
+
+// ============================================================
+//  TIMER BAR
+// ============================================================
+function animateTimerBar(durationMs, frozen = false) {
+  const bar = $('timer-bar');
+  bar.className = frozen ? 'frozen' : '';
+  bar.style.transition = 'none';
+  bar.style.transform = 'scaleX(1)';
+  void bar.offsetWidth;
+  bar.style.transition = `transform ${durationMs}ms linear`;
+  bar.style.transform = 'scaleX(0)';
+}
+
+// ============================================================
+//  FLASH
+// ============================================================
+function flashScreen(color, duration = 300) {
+  const f = $('flash');
+  f.style.background = color;
+  f.style.transition = 'none';
+  f.style.opacity = '1';
+  setTimeout(() => {
+    f.style.transition = `opacity ${duration}ms ease-out`;
+    f.style.opacity = '0';
+  }, 50);
+}
+
+// ============================================================
+//  MAIN GAME SEQUENCE
+// ============================================================
+let gameLoop = null;
+
+function startGame() {
+  $('start-screen').style.display = 'none';
+  getCtx(); // Unlock audio
+  buildStars();
+  playVoz('se_preparem');
+  runCycle();
+}
+
+function runCycle() {
+  // Reset all layers
+  resetLayers();
+  doCountdown(TEMPO.CONTAGEM, () => doHurricane());
+}
+
+function resetLayers() {
+  // Reset lava
+  const ll = $('lava-layer');
+  ll.style.transition = 'none';
+  ll.style.height = '0';
+
+  // Reset ice
+  $('ice-layer').style.opacity = '0';
+  $('ice-overlay').className = '';
+
+  // Reset lava overlay
+  $('lava-overlay').style.background = 'rgba(180,20,0,0)';
+
+  // Reset hurricane
+  $('hurricane-layer').classList.remove('active');
+
+  // Reset volcano
+  $('volcano-layer').classList.remove('show');
+
+  // Reset warning
+  $('warning-msg').style.opacity = '0';
+  $('warning-msg').classList.remove('show');
+
+  // Reset glow
+  $('lava-glow').classList.remove('active');
+
+  // Reset timer bar
+  $('timer-bar').style.transform = 'scaleX(1)';
+  $('timer-bar').className = '';
+  $('timer-bar').style.transition = 'none';
+
+  // Reset bg
+  $('bg').style.background = 'radial-gradient(ellipse at 50% 80%, #1a0a2e 0%, #0d0520 100%)';
+}
+
+function doCountdown(seconds, callback) {
+  setPhase('🎮 Preparar!');
+  const cd = $('countdown');
+  const num = $('countdown-number');
+  const label = $('countdown-label');
+  cd.classList.remove('hidden');
+  cd.style.opacity = '1';
+  label.textContent = 'Espalhem os objetos!';
+  let s = seconds;
+  num.textContent = s;
+  num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'countPulse 1s ease-in-out';
+
+  const tick = setInterval(() => {
+    s--;
+    num.textContent = s;
+    num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'countPulse 1s ease-in-out';
+    if (s <= 3 && s > 0) {
+      num.style.color = '#ff4500';
+    } else {
+      num.style.color = '#fff';
+    }
+    if (s <= 0) {
+      clearInterval(tick);
+      cd.style.opacity = '0';
+      setTimeout(() => cd.classList.add('hidden'), 600);
+      callback();
+    }
+  }, 1000);
+}
+
+// ----- HURRICANE (30 seconds) -----
+function doHurricane() {
+  setPhase('🌀 Furacão!');
+  buildHurricane();
+  $('hurricane-layer').classList.add('active');
+  startWind(0.5);
+
+  setTimeout(() => playVoz('ventania_espalhem'), 500);
+
+  // Animate bg
+  $('bg').style.transition = 'background 2s';
+  $('bg').style.background = 'radial-gradient(ellipse at 50% 50%, #1a2a3a 0%, #0a0d15 100%)';
+
+  animateTimerBar(TEMPO.FURACAO * 1000);
+
+  // Warning message at AVISO_EM seconds mark
+  setTimeout(() => {
+    doWarning();
+  }, TEMPO.AVISO_EM * 1000);
+
+  setTimeout(() => {
+    stopWind();
+    $('hurricane-layer').classList.remove('active');
+    doVolcano();
+  }, TEMPO.FURACAO * 1000);
+}
+
+// ----- WARNING MESSAGE -----
+function doWarning() {
+  setPhase('⚠️ Atenção!');
+  const msg = $('warning-msg');
+  msg.style.opacity = '1';
+  msg.classList.add('show');
+  $('bg').style.background = 'radial-gradient(ellipse at 50% 50%, #2a0a00 0%, #0d0520 100%)';
+
+  // (aviso visual apenas — sem áudio separado para esta fase)
+
+  setTimeout(() => {
+    msg.style.transition = 'opacity 0.5s';
+    msg.style.opacity = '0';
+  }, 8000);
+}
+
+// ----- VOLCANO -----
+function doVolcano() {
+  // Garante que o aviso some imediatamente
+  const msg = $('warning-msg');
+  msg.style.transition = 'opacity 0.3s';
+  msg.style.opacity = '0';
+  msg.classList.remove('show');
+
+  setPhase('🌋 Vulcão!');
+  $('volcano-layer').classList.add('show');
+  $('bg').style.background = 'radial-gradient(ellipse at 50% 80%, #3a0500 0%, #1a0000 100%)';
+
+  // Shake effect
+  let shakes = 0;
+  const shakeApp = setInterval(() => {
+    $('app').style.transform = `translate(${(Math.random()*12-6)}px, ${(Math.random()*6-3)}px)`;
+    shakes++;
+    if (shakes > 15) { clearInterval(shakeApp); $('app').style.transform = ''; }
+  }, 80);
+
+  setTimeout(() => {
+    flashScreen('#ff8c00', 400);
+    playExplosion();
+    spawnEruptionParticles();
+    setPhase('💥 Erupção!');
+    setTimeout(() => {
+      $('volcano-layer').classList.remove('show');
+      doLava();
+    }, 2000);
+  }, 2000);
+}
+
+// ----- LAVA RISING (fills screen in ~8 seconds, stays 5 minutes) -----
+function doLava() {
+  setPhase('🔥 LAVA! Não toque no chão!');
+  $('lava-glow').classList.add('active');
+  startLavaBubble();
+
+  setTimeout(() => playVoz('chao_lava'), 500);
+
+  // Start rising
+  raiseLava(110, 8000);
+
+  // Screen reddening
+  let redOpacity = 0;
+  const redInterval = setInterval(() => {
+    redOpacity = Math.min(redOpacity + 0.04, 0.35);
+    $('lava-overlay').style.background = `rgba(180,20,0,${redOpacity})`;
+    $('bg').style.background = `radial-gradient(ellipse at 50% 80%, #4a0000 0%, #200000 100%)`;
+    if (redOpacity >= 0.35) clearInterval(redInterval);
+  }, 300);
+
+  const LAVA_DURATION = TEMPO.LAVA * 1000;
+  animateTimerBar(LAVA_DURATION);
+
+  setTimeout(() => {
+    stopLavaBubble();
+    doFreeze();
+  }, LAVA_DURATION);
+}
+
+// ----- FREEZE (5 minutes) -----
+function doFreeze() {
+  setPhase('❄️ Congelando!');
+  playFreeze();
+  buildIceCracks();
+  addSnowflakes();
+  startFreezingAudio();
+
+  setTimeout(() => playVoz('lava_esfriando'), 500);
+
+  $('ice-layer').style.opacity = '1';
+  setTimeout(() => $('ice-overlay').classList.add('freezing'), 100);
+
+  $('bg').style.transition = 'background 4s';
+  $('bg').style.background = 'radial-gradient(ellipse at 50% 50%, #002244 0%, #001122 100%)';
+
+  // Lava slowly going down
+  const ll = $('lava-layer');
+  ll.style.transition = 'height 20s ease-in';
+  ll.style.height = '0';
+
+  $('lava-overlay').style.transition = 'background 8s';
+  $('lava-overlay').style.background = 'rgba(0,60,120,0.25)';
+
+  $('lava-glow').classList.remove('active');
+
+  const FREEZE_DURATION = TEMPO.GELO * 1000;
+  animateTimerBar(FREEZE_DURATION, true);
+
+  setTimeout(() => {
+    $('ice-layer').style.opacity = '0';
+    $('ice-overlay').classList.remove('freezing');
+    stopFreezingAudio();
+    playVoz('se_preparem');
+    runCycle();
+  }, FREEZE_DURATION);
+}
+
+// ============================================================
+//  WAKE LOCK – keep screen on while game is open
+// ============================================================
+let wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch (e) { /* silently ignore if denied */ }
+}
+
+// Re-acquire after tab becomes visible again (required by the spec)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+// ============================================================
+//  INIT
+// ============================================================
+buildStars();
+requestWakeLock();
+tentarCarregarAutomatico();
+</script>
+</body>
+</html>
